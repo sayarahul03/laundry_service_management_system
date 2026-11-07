@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Services | FreshFold</title>
+<link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div id="navbar"></div>
+<section class="section"><div class="container">
+  <h2>Services and pricing</h2><p class="sub">Every price is per kilo. Order totals are worked out from these prices.</p>
+  <div class="toolbar"><button class="btn" id="add">Add service</button></div>
+  <div class="grid" id="list"><p class="empty">Loading services...</p></div>
+</div></section>
+<div id="footer"></div>
+<script src="js/main.js"></script>
+<script>
+let services = [];
+const fields = [
+  { name: 'service_name', label: 'Service name', required: true },
+  { name: 'price_per_kg', label: 'Price per kg (₹)', type: 'number', step: '0.01', required: true },
+  { name: 'description', label: 'Description' }
+];
+
+async function load() {
+  services = await api('/services');
+  document.getElementById('list').innerHTML = services.map(s => `
+    <div class="card"><h3>${esc(s.service_name)}</h3><p>${esc(s.description)}</p>
+    <div class="price">${rupees(s.price_per_kg)} <small>per kg</small></div>
+    <div class="row-actions" style="margin-top:1rem">
+      <button class="btn btn-ghost btn-sm" onclick="edit(${s.service_id})">Edit</button>
+      <button class="btn btn-danger btn-sm" onclick="remove(${s.service_id})">Delete</button>
+    </div></div>`).join('') || '<p class="empty">No services yet. Add your first one.</p>';
+}
+function edit(id) {
+  openForm({ title: 'Edit service', fields, values: services.find(s => s.service_id === id),
+    onSave: async v => { await api('/services/' + id, { method: 'PUT', body: v }); toast('Service updated'); load(); } });
+}
+async function remove(id) {
+  if (!confirm('Delete this service?')) return;
+  try { await api('/services/' + id, { method: 'DELETE' }); toast('Service deleted'); load(); } catch (e) { toast(e.message, true); }
+}
+document.getElementById('add').onclick = () => openForm({ title: 'Add service', fields,
+  onSave: async v => { await api('/services', { method: 'POST', body: v }); toast('Service added'); load(); } });
+load().catch(e => toast(e.message, true));
+</script>
+</body></html>

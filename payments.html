@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payments | FreshFold</title>
+<link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div id="navbar"></div>
+<section class="section"><div class="container">
+  <h2>Payments</h2><p class="sub">Record what customers have paid.</p>
+  <div class="toolbar">
+    <select id="filter" aria-label="Filter by payment status"><option value="">All payments</option></select>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Payment</th><th>Order</th><th>Customer</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+</div></section>
+<div id="footer"></div>
+<script src="js/main.js"></script>
+<script>
+let payments = [];
+const filter = document.getElementById('filter');
+filter.innerHTML += PAYMENT_STATUSES.map(s => `<option>${s}</option>`).join('');
+
+async function load() { payments = await api('/payments'); render(); }
+function render() {
+  const list = payments.filter(p => !filter.value || p.status === filter.value);
+  document.getElementById('rows').innerHTML = list.map(p => `
+    <tr><td>#${p.payment_id}</td><td>#${p.order_id}</td><td>${esc(p.customer_name)}</td><td>${rupees(p.amount)}</td>
+    <td>${p.payment_date}</td><td>${esc(p.payment_method) || '-'}</td><td>${badge(p.status)}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="edit(${p.payment_id})">Record payment</button></td></tr>`).join('')
+    || '<tr><td colspan="8" class="empty">No payments found.</td></tr>';
+}
+function edit(id) {
+  const p = payments.find(x => x.payment_id === id);
+  openForm({
+    title: 'Record payment for order #' + p.order_id,
+    fields: [
+      { name: 'amount', label: 'Amount paid (₹)', type: 'number', step: '0.01', required: true },
+      { name: 'payment_method', label: 'Method', type: 'select', options: PAYMENT_METHODS.map(m => ({ value: m, label: m })) },
+      { name: 'status', label: 'Status', type: 'select', options: PAYMENT_STATUSES.map(s => ({ value: s, label: s })) }
+    ],
+    values: { amount: p.amount, payment_method: p.payment_method || 'Cash', status: p.status === 'Unpaid' ? 'Paid' : p.status },
+    onSave: async v => { await api('/payments/' + id, { method: 'PUT', body: v }); toast('Payment saved'); load(); }
+  });
+}
+filter.onchange = render;
+load().catch(e => toast(e.message, true));
+</script>
+</body></html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customers | FreshFold</title>
+<link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div id="navbar"></div>
+<section class="section"><div class="container">
+  <h2>Customers</h2><p class="sub">Add, edit and remove customers.</p>
+  <div class="toolbar">
+    <input id="search" placeholder="Search by name or phone" aria-label="Search customers">
+    <button class="btn" id="add">Add customer</button>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Email</th><th>Address</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+</div></section>
+<div id="footer"></div>
+<script src="js/main.js"></script>
+<script>
+let customers = [];
+const fields = [
+  { name: 'name', label: 'Name', required: true }, { name: 'phone', label: 'Phone', required: true },
+  { name: 'email', label: 'Email', type: 'email' }, { name: 'address', label: 'Address' }
+];
+
+async function load() {
+  customers = await api('/customers');
+  render();
+}
+function render() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const list = customers.filter(c => (c.name + c.phone).toLowerCase().includes(q));
+  document.getElementById('rows').innerHTML = list.map(c => `
+    <tr><td>${c.customer_id}</td><td>${esc(c.name)}</td><td>${esc(c.phone)}</td><td>${esc(c.email)}</td><td>${esc(c.address)}</td>
+    <td><div class="row-actions">
+      <button class="btn btn-ghost btn-sm" onclick="edit(${c.customer_id})">Edit</button>
+      <button class="btn btn-danger btn-sm" onclick="remove(${c.customer_id})">Delete</button>
+    </div></td></tr>`).join('') || '<tr><td colspan="6" class="empty">No customers found.</td></tr>';
+}
+function edit(id) {
+  openForm({ title: 'Edit customer', fields, values: customers.find(c => c.customer_id === id),
+    onSave: async v => { await api('/customers/' + id, { method: 'PUT', body: v }); toast('Customer updated'); load(); } });
+}
+async function remove(id) {
+  if (!confirm('Delete this customer? Their orders and payments will be deleted too.')) return;
+  try { await api('/customers/' + id, { method: 'DELETE' }); toast('Customer deleted'); load(); } catch (e) { toast(e.message, true); }
+}
+document.getElementById('add').onclick = () => openForm({ title: 'Add customer', fields,
+  onSave: async v => { await api('/customers', { method: 'POST', body: v }); toast('Customer added'); load(); } });
+document.getElementById('search').oninput = render;
+load().catch(e => toast(e.message, true));
+</script>
+</body></html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard | FreshFold</title>
+<link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div id="navbar"></div>
+<section class="section"><div class="container">
+  <h2>Dashboard</h2><p class="sub">Where the business stands today.</p>
+  <div class="stats" id="stats"></div>
+  <h2 style="font-size:1.3rem;margin-bottom:1rem">Recent orders</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Order</th><th>Customer</th><th>Service</th><th>Date</th><th>Total</th><th>Status</th></tr></thead>
+    <tbody id="recent"></tbody>
+  </table></div>
+</div></section>
+<div id="footer"></div>
+<script src="js/main.js"></script>
+<script>
+Promise.all([api('/stats'), api('/orders')]).then(([s, orders]) => {
+  const cards = [['Customers', s.customers], ['Total orders', s.orders], ['Pending orders', s.pending], ['Revenue collected', rupees(s.revenue)]];
+  document.getElementById('stats').innerHTML = cards.map(([l, n]) =>
+    '<div class="card stat"><div class="num">' + n + '</div><div class="label">' + l + '</div></div>').join('');
+  document.getElementById('recent').innerHTML = orders.slice(0, 6).map(o =>
+    '<tr><td>#' + o.order_id + '</td><td>' + esc(o.customer_name) + '</td><td>' + esc(o.service_name) + '</td><td>' +
+    o.order_date + '</td><td>' + rupees(o.total_amount) + '</td><td>' + badge(o.status) + '</td></tr>').join('')
+    || '<tr><td colspan="6" class="empty">No orders yet.</td></tr>';
+}).catch(e => toast(e.message, true));
+</script>
+</body></html>

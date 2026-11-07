@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreshFold Laundry | Pickup, wash, deliver</title>
+<link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div id="navbar"></div>
+<header class="hero"><div class="container">
+  <h1>Your laundry, washed and back at your door.</h1>
+  <p>Book a pickup in a minute. We wash, dry, fold or iron, and deliver it fresh. You pay by the kilo.</p>
+  <div class="actions">
+    <a class="btn" href="orders.html?new=1">Place an order</a>
+    <a class="btn btn-light" href="services.html">See prices</a>
+  </div>
+</div></header>
+
+<section class="section"><div class="container">
+  <h2>Popular services</h2><p class="sub">Priced per kilo of clothes.</p>
+  <div class="grid" id="featured"><p class="empty">Loading services...</p></div>
+</div></section>
+
+<section class="section"><div class="container">
+  <h2>How it works</h2><p class="sub">Three steps from dirty to done.</p>
+  <div class="steps">
+    <div class="card"><h3>We pick up</h3><p>Choose a service and weight. We collect the clothes from your address.</p></div>
+    <div class="card"><h3>We clean</h3><p>Washed, dried and pressed according to the service you picked.</p></div>
+    <div class="card"><h3>We deliver</h3><p>Folded, packed and returned to you. Pay by cash, UPI or card.</p></div>
+  </div>
+</div></section>
+
+<div id="footer"></div>
+<script src="js/main.js"></script>
+<script>
+api('/services').then(list => {
+  document.getElementById('featured').innerHTML = list.slice(0, 3).map(s => `
+    <div class="card"><h3>${esc(s.service_name)}</h3><p>${esc(s.description)}</p>
+    <div class="price">${rupees(s.price_per_kg)} <small>per kg</small></div></div>`).join('')
+    || '<p class="empty">No services yet.</p>';
+}).catch(e => document.getElementById('featured').innerHTML = '<p class="empty">' + esc(e.message) + '</p>');
+</script>
+</body></html>
